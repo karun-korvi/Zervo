@@ -1,0 +1,304 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global safety net: deny everything by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedOwner(userId) {
+      return isSignedIn()
+        && request.auth.uid == userId
+        && request.auth.token.email_verified == true;
+    }
+
+    function isOwnerRead(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'preferredCity', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'preferredCity', 'createdAt', 'updatedAt'])
+        && data.uid is string && data.uid == userId && isValidId(data.uid)
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 254
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120
+        && data.preferredCity is string && data.preferredCity.size() >= 2 && data.preferredCity.size() <= 80
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidBooking(data, userId, bookingId) {
+      return data.keys().hasAll([
+          'id', 'userId', 'kind', 'segment', 'title', 'counterpartyName',
+          'counterpartyMeta', 'city', 'address', 'scheduledSlot', 'amount',
+          'gstOrFee', 'totalAmount', 'stage', 'status', 'escrowCode',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'userId', 'kind', 'segment', 'title', 'counterpartyName',
+          'counterpartyMeta', 'city', 'address', 'scheduledSlot', 'amount',
+          'gstOrFee', 'totalAmount', 'stage', 'status', 'escrowCode',
+          'headcount', 'gstin', 'notes', 'rating', 'reviewText',
+          'supportTicket', 'serviceCategory', 'assignedWorkerId', 'dispatchStatus',
+          'distanceKm', 'etaMinutes',
+          'hubLat', 'hubLng', 'siteLat', 'siteLng',
+          'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == bookingId && isValidId(data.id)
+        && data.userId is string && data.userId == userId
+        && data.kind in ['service_booking', 'claimed_shift', 'custom_request', 'professional_appointment']
+        && data.segment in ['B2C', 'B2B']
+        && data.title is string && data.title.size() >= 2 && data.title.size() <= 180
+        && data.counterpartyName is string && data.counterpartyName.size() >= 2 && data.counterpartyName.size() <= 140
+        && data.counterpartyMeta is string && data.counterpartyMeta.size() >= 2 && data.counterpartyMeta.size() <= 160
+        && data.city is string && data.city.size() >= 2 && data.city.size() <= 80
+        && data.address is string && data.address.size() >= 2 && data.address.size() <= 240
+        && data.scheduledSlot is string && data.scheduledSlot.size() >= 2 && data.scheduledSlot.size() <= 120
+        && data.amount is number && data.amount >= 0 && data.amount <= 5000000
+        && data.gstOrFee is number && data.gstOrFee >= 0 && data.gstOrFee <= 1000000
+        && data.totalAmount is number && data.totalAmount >= 0 && data.totalAmount <= 6000000
+        && data.stage is int && data.stage >= 0 && data.stage <= 3
+        && data.status in ['Active', 'Completed', 'Cancelled']
+        && data.escrowCode is string && data.escrowCode.size() >= 3 && data.escrowCode.size() <= 40
+        && (!('headcount' in data) || (data.headcount is int && data.headcount >= 1 && data.headcount <= 500))
+        && (!('gstin' in data) || (data.gstin is string && data.gstin.size() <= 20))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 500))
+        && (!('rating' in data) || (data.rating is int && data.rating >= 1 && data.rating <= 5))
+        && (!('reviewText' in data) || (data.reviewText is string && data.reviewText.size() <= 400))
+        && (!('supportTicket' in data) || (data.supportTicket is string && data.supportTicket.size() <= 300))
+        && (!('serviceCategory' in data) || (data.serviceCategory is string && data.serviceCategory.size() >= 2 && data.serviceCategory.size() <= 80))
+        && (!('assignedWorkerId' in data) || (data.assignedWorkerId is string && isValidId(data.assignedWorkerId) && data.assignedWorkerId.size() <= 64))
+        && (!('dispatchStatus' in data) || data.dispatchStatus in ['Pinging Nearest', 'Accepted', 'Fallback Reassigned'])
+        && (!('distanceKm' in data) || (data.distanceKm is number && data.distanceKm >= 0 && data.distanceKm <= 1000))
+        && (!('etaMinutes' in data) || (data.etaMinutes is int && data.etaMinutes >= 0 && data.etaMinutes <= 1440))
+        && (!('hubLat' in data) || data.hubLat is number)
+        && (!('hubLng' in data) || data.hubLng is number)
+        && (!('siteLat' in data) || data.siteLat is number)
+        && (!('siteLng' in data) || data.siteLng is number)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidLedgerEntry(data, userId, entryId) {
+      return data.keys().hasAll([
+          'id', 'userId', 'date', 'description', 'zone', 'durationLabel',
+          'grossAmount', 'platformFee', 'netAmount', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'userId', 'date', 'description', 'zone', 'durationLabel',
+          'grossAmount', 'platformFee', 'netAmount', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == entryId && isValidId(data.id)
+        && data.userId is string && data.userId == userId
+        && data.date is string && data.date.size() >= 3 && data.date.size() <= 40
+        && data.description is string && data.description.size() >= 2 && data.description.size() <= 180
+        && data.zone is string && data.zone.size() >= 2 && data.zone.size() <= 80
+        && data.durationLabel is string && data.durationLabel.size() >= 2 && data.durationLabel.size() <= 40
+        && data.grossAmount is number && data.grossAmount >= 0 && data.grossAmount <= 5000000
+        && data.platformFee is number && data.platformFee >= 0 && data.platformFee <= 1000000
+        && data.netAmount is number && data.netAmount >= 0 && data.netAmount <= 5000000
+        && data.status in ['In Escrow', 'Settled', 'Withdrawn']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidRequirement(data, userId, reqId) {
+      return data.keys().hasAll([
+          'id', 'userId', 'companyName', 'industry', 'roleTitle', 'city',
+          'workersRequested', 'workersConfirmed', 'workersCheckedIn', 'workFormat',
+          'shiftWindow', 'payoutPerWorker', 'status', 'gstInvoiceId', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'userId', 'companyName', 'industry', 'roleTitle', 'city',
+          'workersRequested', 'workersConfirmed', 'workersCheckedIn', 'workFormat',
+          'shiftWindow', 'payoutPerWorker', 'status', 'gstInvoiceId', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == reqId && isValidId(data.id)
+        && data.userId is string && data.userId == userId
+        && data.companyName is string && data.companyName.size() >= 2 && data.companyName.size() <= 140
+        && data.industry is string && data.industry.size() >= 2 && data.industry.size() <= 80
+        && data.roleTitle is string && data.roleTitle.size() >= 2 && data.roleTitle.size() <= 140
+        && data.city is string && data.city.size() >= 2 && data.city.size() <= 80
+        && data.workersRequested is int && data.workersRequested >= 1 && data.workersRequested <= 500
+        && data.workersConfirmed is int && data.workersConfirmed >= 0 && data.workersConfirmed <= data.workersRequested
+        && data.workersCheckedIn is int && data.workersCheckedIn >= 0 && data.workersCheckedIn <= data.workersRequested
+        && data.workFormat is string && data.workFormat.size() >= 2 && data.workFormat.size() <= 60
+        && data.shiftWindow is string && data.shiftWindow.size() >= 2 && data.shiftWindow.size() <= 120
+        && data.payoutPerWorker is number && data.payoutPerWorker >= 100 && data.payoutPerWorker <= 100000
+        && data.status in ['Recruiting', 'Shift Active', 'Completed']
+        && data.gstInvoiceId is string && data.gstInvoiceId.size() >= 3 && data.gstInvoiceId.size() <= 40
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidWorkerProfile(data, userId, profileId) {
+      return data.keys().hasAll([
+          'id', 'userId', 'accountRole', 'name', 'initials', 'segment',
+          'primaryTrade', 'city', 'locality', 'yearsExperience', 'hourlyRate',
+          'flatVisitFee', 'availability', 'workPreference', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'userId', 'accountRole', 'name', 'initials', 'segment',
+          'primaryTrade', 'city', 'locality', 'yearsExperience', 'hourlyRate',
+          'flatVisitFee', 'availability', 'workPreference', 'registrationNumber',
+          'bio', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == profileId && isValidId(data.id)
+        && data.userId is string && data.userId == userId
+        && data.accountRole in ['Worker', 'Partner']
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+        && data.initials is string && data.initials.size() >= 1 && data.initials.size() <= 6
+        && data.segment in ['B2C', 'B2B']
+        && data.primaryTrade is string && data.primaryTrade.size() >= 2 && data.primaryTrade.size() <= 80
+        && data.city is string && data.city.size() >= 2 && data.city.size() <= 80
+        && data.locality is string && data.locality.size() >= 2 && data.locality.size() <= 120
+        && data.yearsExperience is int && data.yearsExperience >= 0 && data.yearsExperience <= 60
+        && data.hourlyRate is number && data.hourlyRate >= 100 && data.hourlyRate <= 50000
+        && data.flatVisitFee is number && data.flatVisitFee >= 0 && data.flatVisitFee <= 50000
+        && data.availability in ['Full-Time', 'Part-Time', 'Shift-Flexible']
+        && data.workPreference in ['Daily', 'Monthly', 'Daily & Monthly']
+        && (!('registrationNumber' in data) || (data.registrationNumber is string && data.registrationNumber.size() <= 60))
+        && (!('bio' in data) || (data.bio is string && data.bio.size() <= 400))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Connection health check path used by getDocFromServer at startup
+    match /test/{docId} {
+      allow get: if docId == 'connection';
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwnerRead(userId);
+      allow create: if isValidId(userId)
+        && isVerifiedOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId)
+        && isVerifiedOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'preferredCity', 'updatedAt']);
+
+      match /bookings/{bookingId} {
+        allow get: if isValidId(bookingId) && isOwnerRead(userId);
+        allow list: if isOwnerRead(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isValidId(bookingId)
+          && isVerifiedOwner(userId)
+          && exists(/databases/$(database)/documents/users/$(userId))
+          && isValidBooking(incoming(), userId, bookingId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(bookingId)
+          && isVerifiedOwner(userId)
+          && isValidBooking(incoming(), userId, bookingId)
+          && incoming().id == existing().id
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            (existing().status == 'Active'
+              && incoming().stage >= existing().stage
+              && (incoming().status != 'Completed' || incoming().stage == 3)
+              && incoming().diff(existing()).affectedKeys().hasOnly(['stage', 'status', 'updatedAt']))
+            || (existing().status == 'Active'
+              && incoming().status == 'Active'
+              && incoming().stage >= existing().stage
+              && incoming().stage <= 1
+              && incoming().diff(existing()).affectedKeys().hasOnly([
+                'assignedWorkerId',
+                'dispatchStatus',
+                'counterpartyName',
+                'counterpartyMeta',
+                'distanceKm',
+                'etaMinutes',
+                'hubLat',
+                'hubLng',
+                'stage',
+                'updatedAt'
+              ]))
+            || (existing().status == 'Completed'
+              && incoming().status == existing().status
+              && incoming().diff(existing()).affectedKeys().hasOnly(['rating', 'reviewText', 'supportTicket', 'updatedAt']))
+          );
+        allow delete: if false;
+      }
+
+      match /ledger/{entryId} {
+        allow get: if isValidId(entryId) && isOwnerRead(userId);
+        allow list: if isOwnerRead(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isValidId(entryId)
+          && isVerifiedOwner(userId)
+          && exists(/databases/$(database)/documents/users/$(userId))
+          && isValidLedgerEntry(incoming(), userId, entryId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(entryId)
+          && isVerifiedOwner(userId)
+          && isValidLedgerEntry(incoming(), userId, entryId)
+          && existing().status == 'In Escrow'
+          && incoming().status == 'Settled'
+          && incoming().id == existing().id
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+        allow delete: if false;
+      }
+
+      match /requirements/{reqId} {
+        allow get: if isValidId(reqId) && isOwnerRead(userId);
+        allow list: if isOwnerRead(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isValidId(reqId)
+          && isVerifiedOwner(userId)
+          && exists(/databases/$(database)/documents/users/$(userId))
+          && isValidRequirement(incoming(), userId, reqId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(reqId)
+          && isVerifiedOwner(userId)
+          && existing().status != 'Completed'
+          && isValidRequirement(incoming(), userId, reqId)
+          && incoming().id == existing().id
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['workersCheckedIn', 'workersConfirmed', 'status', 'updatedAt']);
+        allow delete: if false;
+      }
+
+      match /workerProfiles/{profileId} {
+        allow get: if isValidId(profileId) && isOwnerRead(userId);
+        allow list: if isOwnerRead(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isValidId(profileId)
+          && isVerifiedOwner(userId)
+          && exists(/databases/$(database)/documents/users/$(userId))
+          && isValidWorkerProfile(incoming(), userId, profileId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if false;
+        allow delete: if false;
+      }
+    }
+  }
+}

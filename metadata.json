@@ -1,0 +1,8 @@
+{
+  "name": "Remix ZEVRO - Everyday Services, Jobs",
+  "description": "High-trust everyday services marketplace and instant job exchange for verified pros, consumers, and enterprise operators.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

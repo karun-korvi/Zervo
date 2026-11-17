@@ -1,0 +1,217 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated ZEVRO user profile linked to Firebase Auth UID.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "maxLength": 254 },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "preferredCity": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "displayName", "preferredCity", "createdAt", "updatedAt"]
+    },
+    "UserBooking": {
+      "title": "UserBooking",
+      "description": "Service booking, professional consultation, or claimed worker shift owned by a user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "kind": { "type": "string", "enum": ["service_booking", "claimed_shift", "custom_request", "professional_appointment"] },
+        "segment": { "type": "string", "enum": ["B2C", "B2B"] },
+        "title": { "type": "string", "minLength": 2, "maxLength": 180 },
+        "counterpartyName": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "counterpartyMeta": { "type": "string", "minLength": 2, "maxLength": 160 },
+        "city": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "address": { "type": "string", "minLength": 2, "maxLength": 240 },
+        "scheduledSlot": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "amount": { "type": "number" },
+        "gstOrFee": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "stage": { "type": "integer" },
+        "status": { "type": "string", "enum": ["Active", "Completed", "Cancelled"] },
+        "escrowCode": { "type": "string", "minLength": 3, "maxLength": 40 },
+        "headcount": { "type": "integer" },
+        "gstin": { "type": "string", "maxLength": 20 },
+        "notes": { "type": "string", "maxLength": 500 },
+        "rating": { "type": "integer" },
+        "reviewText": { "type": "string", "maxLength": 400 },
+        "supportTicket": { "type": "string", "maxLength": 300 },
+        "serviceCategory": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "assignedWorkerId": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "dispatchStatus": { "type": "string", "enum": ["Pinging Nearest", "Accepted", "Fallback Reassigned"] },
+        "distanceKm": { "type": "number" },
+        "etaMinutes": { "type": "integer" },
+        "hubLat": { "type": "number" },
+        "hubLng": { "type": "number" },
+        "siteLat": { "type": "number" },
+        "siteLng": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "userId",
+        "kind",
+        "segment",
+        "title",
+        "counterpartyName",
+        "counterpartyMeta",
+        "city",
+        "address",
+        "scheduledSlot",
+        "amount",
+        "gstOrFee",
+        "totalAmount",
+        "stage",
+        "status",
+        "escrowCode",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "LedgerItem": {
+      "title": "LedgerItem",
+      "description": "Worker shift escrow or instant withdrawal entry.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "date": { "type": "string", "minLength": 3, "maxLength": 40 },
+        "description": { "type": "string", "minLength": 2, "maxLength": 180 },
+        "zone": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "durationLabel": { "type": "string", "minLength": 2, "maxLength": 40 },
+        "grossAmount": { "type": "number" },
+        "platformFee": { "type": "number" },
+        "netAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["In Escrow", "Settled", "Withdrawn"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "userId",
+        "date",
+        "description",
+        "zone",
+        "durationLabel",
+        "grossAmount",
+        "platformFee",
+        "netAmount",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "BusinessRequirementRecord": {
+      "title": "BusinessRequirementRecord",
+      "description": "B2B bulk workforce shift requirement posted by an employer.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "companyName": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "industry": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "roleTitle": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "city": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "workersRequested": { "type": "integer" },
+        "workersConfirmed": { "type": "integer" },
+        "workersCheckedIn": { "type": "integer" },
+        "workFormat": { "type": "string", "minLength": 2, "maxLength": 60 },
+        "shiftWindow": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "payoutPerWorker": { "type": "number" },
+        "status": { "type": "string", "enum": ["Recruiting", "Shift Active", "Completed"] },
+        "gstInvoiceId": { "type": "string", "minLength": 3, "maxLength": 40 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "userId",
+        "companyName",
+        "industry",
+        "roleTitle",
+        "city",
+        "workersRequested",
+        "workersConfirmed",
+        "workersCheckedIn",
+        "workFormat",
+        "shiftWindow",
+        "payoutPerWorker",
+        "status",
+        "gstInvoiceId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "WorkerProfileRecord": {
+      "title": "WorkerProfileRecord",
+      "description": "Worker or partner registration submitted by an authenticated user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 2, "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "accountRole": { "type": "string", "enum": ["Worker", "Partner"] },
+        "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "initials": { "type": "string", "minLength": 1, "maxLength": 6 },
+        "segment": { "type": "string", "enum": ["B2C", "B2B"] },
+        "primaryTrade": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "city": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "locality": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "yearsExperience": { "type": "integer" },
+        "hourlyRate": { "type": "number" },
+        "flatVisitFee": { "type": "number" },
+        "availability": { "type": "string", "enum": ["Full-Time", "Part-Time", "Shift-Flexible"] },
+        "workPreference": { "type": "string", "enum": ["Daily", "Monthly", "Daily & Monthly"] },
+        "registrationNumber": { "type": "string", "maxLength": 60 },
+        "bio": { "type": "string", "maxLength": 400 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "userId",
+        "accountRole",
+        "name",
+        "initials",
+        "segment",
+        "primaryTrade",
+        "city",
+        "locality",
+        "yearsExperience",
+        "hourlyRate",
+        "flatVisitFee",
+        "availability",
+        "workPreference",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user account profile isolated to the authenticated owner."
+    },
+    "/users/{userId}/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/UserBooking" },
+      "description": "Private bookings and claimed shifts belonging to the user."
+    },
+    "/users/{userId}/ledger/{entryId}": {
+      "schema": { "$ref": "#/entities/LedgerItem" },
+      "description": "Private worker earnings and withdrawal ledger entries."
+    },
+    "/users/{userId}/requirements/{reqId}": {
+      "schema": { "$ref": "#/entities/BusinessRequirementRecord" },
+      "description": "Private B2B workforce shift orders created by the user."
+    },
+    "/users/{userId}/workerProfiles/{profileId}": {
+      "schema": { "$ref": "#/entities/WorkerProfileRecord" },
+      "description": "Worker and partner onboarding profiles created by the user."
+    }
+  }
+}
